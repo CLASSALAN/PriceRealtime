@@ -1,0 +1,6 @@
+{"get_time": "2022-04-14 00:00:01", "web_time": "2022-04-14 00:00:03", "get_time_day": "20220414", "get_time_hour": "00", "token_symbol": "ETH", "coin2rmb": "0", "coin2usd": "3092.40"}
+{"get_time": "2022-04-14 00:00:00", "web_time": "2022-04-14 00:00:03", "get_time_day": "20220414", "get_time_hour": "00", "token_symbol": "BCH", "coin2rmb": "0", "coin2usd": "337.17"}
+{"get_time": "2022-04-14 00:00:01", "web_time": "2022-04-14 00:00:03", "get_time_day": "20220414", "get_time_hour": "00", "token_symbol": "SOL", "coin2rmb": "0", "coin2usd": "105.0700"}
+{"get_time": "2022-04-14 00:00:00", "web_time": "2022-04-14 00:00:03", "get_time_day": "20220414", "get_time_hour": "00", "token_symbol": "AAVE", "coin2rmb": "0", "coin2usd": "172.110"}
+{"get_time": "2022-04-14 00:00:00", "web_time": "2022-04-14 00:00:03", "get_time_day": "20220414", "get_time_hour": "00", "token_symbol": "1INCH", "coin2rmb": "0", "coin2usd": "1.5326"}
+{"get_time": "2022-04-14 00:00:00", "web_time": "2022-04-14 00:00:03", "get_time_day": "20220414", "get_time_hour": "00", "token_symbol": "DOGE", "coin2rmb": "0", "coin2usd": "0.139770"}
