@@ -1,13 +1,20 @@
 package com.skydp.chaindata.realtime.app.dwd;
 
+import com.alibaba.fastjson.JSON;
+import com.skydp.chaindata.realtime.bean.CoinPrice;
 import com.skydp.chaindata.realtime.utils.ConfigUtil;
+import com.skydp.chaindata.realtime.utils.SkyClickhouseUtil;
 import com.skydp.chaindata.realtime.utils.SkyKafkaUtil;
+import org.apache.flink.api.common.eventtime.SerializableTimestampAssigner;
 import org.apache.flink.api.common.eventtime.WatermarkStrategy;
 import org.apache.flink.connector.kafka.source.KafkaSource;
 import org.apache.flink.runtime.state.hashmap.HashMapStateBackend;
 import org.apache.flink.streaming.api.CheckpointingMode;
 import org.apache.flink.streaming.api.datastream.DataStreamSource;
+import org.apache.flink.streaming.api.datastream.SingleOutputStreamOperator;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
+
+import java.text.SimpleDateFormat;
 
 public class CoinPriceApp {
     public static void main(String[] args) throws Exception {
@@ -49,7 +56,35 @@ public class CoinPriceApp {
                         }), */
                         "Kafka Source").setParallelism(3);
 
-        kafkaDS.print();
+        SingleOutputStreamOperator<CoinPrice> result = kafkaDS.map(line -> {
+            CoinPrice coinPrice = JSON.parseObject(line, CoinPrice.class);
+            String web_time = coinPrice.getWeb_time();
+            String[] web_time_arr = web_time.split(" ");
+            coinPrice.setDate(web_time_arr[0]);
+
+            SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+            coinPrice.setTs(sdf.parse(web_time).getTime());
+
+            if(coinPrice.getCoin2rmb() == null){
+                coinPrice.setCoin2rmb(0.0);
+            }
+
+            if(coinPrice.getCoin2usd() == null){
+                coinPrice.setCoin2usd(0.0);
+            }
+
+            return coinPrice;
+        }).assignTimestampsAndWatermarks(WatermarkStrategy.<CoinPrice>forMonotonousTimestamps()
+                .withTimestampAssigner(new SerializableTimestampAssigner<CoinPrice>() {
+                    @Override
+                    public long extractTimestamp(CoinPrice coinPrice, long l) {
+                        return coinPrice.getTs();
+                    }
+                }));
+
+        String insertSql = "insert into coin_price values(?, ?, ?, ?, ?, ?, ?, ?, ?)";
+
+        result.addSink(SkyClickhouseUtil.getJdbcSink(insertSql));
 
         env.execute();
 

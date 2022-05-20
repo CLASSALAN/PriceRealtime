@@ -23,7 +23,7 @@ public class CoinPriceTest {
             CoinPrice coinPrice = JSON.parseObject(line, CoinPrice.class);
             String web_time = coinPrice.getWeb_time();
             String[] web_time_arr = web_time.split(" ");
-            coinPrice.setWeb_date(web_time_arr[0]);
+            coinPrice.setDate(web_time_arr[0]);
 
             SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
             coinPrice.setTs(sdf.parse(web_time).getTime());
