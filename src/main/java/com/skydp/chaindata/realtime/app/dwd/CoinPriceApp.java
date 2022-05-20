@@ -65,6 +65,14 @@ public class CoinPriceApp {
             SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
             coinPrice.setTs(sdf.parse(web_time).getTime());
 
+            if(coinPrice.getCoin2rmb() == null){
+                coinPrice.setCoin2rmb(0.0);
+            }
+
+            if(coinPrice.getCoin2usd() == null){
+                coinPrice.setCoin2usd(0.0);
+            }
+
             return coinPrice;
         }).assignTimestampsAndWatermarks(WatermarkStrategy.<CoinPrice>forMonotonousTimestamps()
                 .withTimestampAssigner(new SerializableTimestampAssigner<CoinPrice>() {
