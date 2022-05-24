@@ -1,7 +1,7 @@
 package com.skydp.chaindata.realtime.app.dwd;
 
 import com.alibaba.fastjson.JSON;
-import com.skydp.chaindata.realtime.bean.CoinPrice;
+import com.skydp.chaindata.realtime.bean.FloorPrice;
 import com.skydp.chaindata.realtime.utils.ConfigUtil;
 import com.skydp.chaindata.realtime.utils.SkyClickhouseUtil;
 import com.skydp.chaindata.realtime.utils.SkyKafkaUtil;
@@ -18,9 +18,8 @@ import org.apache.flink.util.Collector;
 
 import java.text.SimpleDateFormat;
 
-public class CoinPriceApp {
+public class FloorPriceApp {
     public static void main(String[] args) throws Exception {
-        //Create the Flink flow processing execution environment
         StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
 
         //Parallelism is synchronized with the Kafka partition
@@ -38,10 +37,9 @@ public class CoinPriceApp {
         System.setProperty("HADOOP_USER_NAME", "hdfs");
 
         //设置kafka消费主题和消费组
-        String groupId = "dwd_coin_price";
-        String topic = "coin_price";
+        String groupId = "dwd_floor_price";
+        String topic = "opensea_floor_price";
 
-        //获取kafkasource
         KafkaSource<String> kafkaSource = SkyKafkaUtil.getKafkaSource(topic, groupId);
 
         //flink连接kafka
@@ -58,73 +56,35 @@ public class CoinPriceApp {
                         }), */
                         "Kafka Source").setParallelism(3);
 
-        SingleOutputStreamOperator<CoinPrice> result = kafkaDS.process(new ProcessFunction<String, CoinPrice>() {
+        SingleOutputStreamOperator<FloorPrice> result = kafkaDS.process(new ProcessFunction<String, FloorPrice>() {
             @Override
-            public void processElement(String line, Context context, Collector<CoinPrice> collector) throws Exception {
+            public void processElement(String line, Context context, Collector<FloorPrice> collector) throws Exception {
                 try {
-                    CoinPrice coinPrice = JSON.parseObject(line, CoinPrice.class);
-                    String web_time = coinPrice.getWeb_time();
-                    String[] web_time_arr = web_time.split(" ");
-                    coinPrice.setDate(web_time_arr[0]);
+                    FloorPrice floorPrice = JSON.parseObject(line, FloorPrice.class);
+                    String time = floorPrice.getData_collection_time();
+                    String[] time_arr = time.split(" ");
+                    floorPrice.setDate(time_arr[0]);
 
                     SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
-                    coinPrice.setTs(sdf.parse(web_time).getTime());
+                    floorPrice.setTs(sdf.parse(time).getTime());
 
-                    if (coinPrice.getCoin2rmb() == null) {
-                        coinPrice.setCoin2rmb(0.0);
-                    }
-
-                    if (coinPrice.getCoin2usd() == null) {
-                        coinPrice.setCoin2usd(0.0);
-                    }
-
-                    collector.collect(coinPrice);
+                    collector.collect(floorPrice);
                 } catch (Exception e) {
                     e.printStackTrace();
                 }
             }
-        })
-
-//                .map(line -> {
-//            CoinPrice coinPrice = new CoinPrice();
-//            try {
-//                coinPrice = JSON.parseObject(line, CoinPrice.class);
-//                String web_time = coinPrice.getWeb_time();
-//                String[] web_time_arr = web_time.split(" ");
-//                coinPrice.setDate(web_time_arr[0]);
-//
-//                SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
-//                coinPrice.setTs(sdf.parse(web_time).getTime());
-//
-//                if (coinPrice.getCoin2rmb() == null) {
-//                    coinPrice.setCoin2rmb(0.0);
-//                }
-//
-//                if (coinPrice.getCoin2usd() == null) {
-//                    coinPrice.setCoin2usd(0.0);
-//                }
-//
-//            } catch (Exception e) {
-//                e.printStackTrace();
-//                return null;
-//            }
-//
-//            return coinPrice;
-//        })
-
-                .assignTimestampsAndWatermarks(WatermarkStrategy.<CoinPrice>forMonotonousTimestamps()
-                .withTimestampAssigner(new SerializableTimestampAssigner<CoinPrice>() {
+        }).assignTimestampsAndWatermarks(WatermarkStrategy.<FloorPrice>forMonotonousTimestamps()
+                .withTimestampAssigner(new SerializableTimestampAssigner<FloorPrice>() {
                     @Override
-                    public long extractTimestamp(CoinPrice coinPrice, long l) {
-                        return coinPrice.getTs();
+                    public long extractTimestamp(FloorPrice floorPrice, long l) {
+                        return floorPrice.getTs();
                     }
                 }));
 
-        String insertSql = "insert into coin_price values(?, ?, ?, ?, ?, ?, ?, ?, ?)";
+        String insertSql = "insert into floor_price values(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
 
         result.addSink(SkyClickhouseUtil.getJdbcSink(insertSql));
 
-        env.execute("Coin Price");
-
+        env.execute("Floor Price");
     }
 }
