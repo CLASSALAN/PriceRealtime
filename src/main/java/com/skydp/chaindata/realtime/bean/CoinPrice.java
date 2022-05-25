@@ -7,7 +7,7 @@ public class CoinPrice {
     String get_time;
     String web_time;
     String get_time_day;
-    Integer get_time_hour;
+    String data_source;
     String token_symbol;
     Double coin2rmb;
     Double coin2usd;
